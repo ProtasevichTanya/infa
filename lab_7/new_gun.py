@@ -5,6 +5,7 @@ import pygame
 
 FPS = 30
 
+#цвета
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
@@ -20,9 +21,18 @@ GAME_COLORS = [RED, BLUE, YELLOW, GREEN, MAGENTA, CYAN]
 #размеры экрана
 WIDTH = 800
 HEIGHT = 600
+
+#размер танка
 tank_size = 100
-l = 0 #счетчик очков
+
+#счетчик очков
+l = 3
 p = str (l)
+
+#уровень жизни
+k = 3
+
+#импортируем изображения из файла
 
 tank_image = pygame.image.load('tank.png')
 tank_image = pygame.transform.scale(tank_image, (tank_size, tank_size))
@@ -32,12 +42,15 @@ bomba_pikch = pygame.transform.scale(bomba_pikch, (50, 50))
 
 name = input('Ваше имя: ')
 
+#константы
 g = - 1
 t = 1
 
-points = 0
+points = 0 #(???)
+
 
 class Bomba:
+    
     def __init__(self, screen):
         """ Конструктор класса Bomba """
         self.screen = screen
@@ -48,7 +61,7 @@ class Bomba:
         self.vy = 5
 
     def new_bomba(self):
-        """Инициализация новой бомбы"""
+        """ Инициализация новой бомбы """
         x = self.x = ran.randint(self.size, WIDTH  - self.size)
         self.y = 0
         self.life = 1
@@ -65,18 +78,14 @@ class Bomba:
         """Прорисовка бомбы"""
         self.screen.blit(bomba_pikch, (self.x, self.y))
 
-    def hittest(self, obj):
+    def hittest(self, obj): 
         """Проверка стоклновения бомбы с танком: минус жизнь"""
         return (((self.y + self.size) > obj.y) and (self.y < (obj.y + obj.size)) and ((self.x + self.size) > obj.x) and (self.x < (obj.x + obj.size)))
 
 class Ball:
-    def __init__(self, screen):
-        """ Конструктор класса ball
-
-        Args:
-        x - начальное положение мяча по горизонтали
-        y - начальное положение мяча по вертикали
-        """
+    
+    def __init__(self, screen, color):
+        """ Конструктор класса ball """
         self.screen = screen
         self.x = 40
         self.y = 450
@@ -84,7 +93,7 @@ class Ball:
         self.g = 100
         self.vx = 5
         self.vy = 5
-        self.color = choice(GAME_COLORS)
+        #self.color = choice(GAME_COLORS)
         self.live = 30
 
     def move(self):
@@ -110,10 +119,10 @@ class Ball:
             self.y = self.y + 0.9*self.vy
         
 
-    def draw(self, screen):
+    def draw(self, screen, color):
         pygame.draw.circle(
             self.screen,
-            self.color,
+            color,
             (self.x, self.y),
             self.r)
 
@@ -130,22 +139,21 @@ class Ball:
         else:
             return False
         
-class Ball_2 (Ball):
+class Rectangle (Ball):
 
-    def __init__ (self, screen):
-        super().__init__(screen)
+    def __init__ (self, screen, color):
+        """ Второй тип снаряда и мишени - квадрат """
+        super().__init__(screen, color)
 
 
-    def draw_ball2(self, screen):
+    def draw_rect(self, screen, color):
         pygame.draw.rect(
             self.screen,
-            self.color,
+            color,
             (self.x, self.y, self.r, self.r))
         
-    
-    
-
 class Gun:
+    
     def __init__(self, screen):
         self.screen = screen
         self.x = 40
@@ -164,17 +172,21 @@ class Gun:
     def fire2_left_end(self, event):
         """Выстрел мячом.
 
-        Происходит при отпускании кнопки мыши.
+        Происходит при отпускании левой кнопки мыши.
         Начальные значения компонент скорости мяча vx и vy зависят от положения мыши.
         """
         global balls, bullet
+        
         bullet += 1
-        new_ball = Ball(self.screen)
+        
+        new_ball = Ball(self.screen, BLACK)
         new_ball.x = self.x + 60
         new_ball.y = self.y
-        self.an = math.atan2((-event.pos[1]+new_ball.y), (event.pos[0]-new_ball.x))
+        
+        self.an = math.atan2((-event.pos[1] + new_ball.y), (event.pos[0] - new_ball.x))
         new_ball.vx = self.f2_power * math.cos(self.an)
         new_ball.vy = - self.f2_power * math.sin(self.an)
+        
         balls.append(new_ball)
         self.f2_on = 0
         self.f2_power = 10
@@ -182,17 +194,21 @@ class Gun:
     def fire2_right_end(self, event):
         """Выстрел другим снарядом
 
-        Происходит при отпускании кнопки мыши.
-        Начальные значения компонент скорости мяча vx и vy зависят от положения мыши.
+        Происходит при отпускании правой кнопки мыши.
+        Начальные значения компонент скорости снаряда vx и vy зависят от положения мыши.
         """
         global rects, bullet
+        
         bullet += 1
-        new_ball = Ball_2(self.screen)
+        
+        new_ball = Rectangle(self.screen, BLACK)
         new_ball.x = self.x + 60
-        new_ball.y = self.y 
+        new_ball.y = self.y
+        
         self.an = math.atan2((-event.pos[1]+new_ball.y), (event.pos[0]-new_ball.x))
         new_ball.vx = self.f2_power * math.cos(self.an)
         new_ball.vy = - self.f2_power * math.sin(self.an)
+        
         rects.append(new_ball)
         self.f2_on = 0
         self.f2_power = 10
@@ -200,11 +216,11 @@ class Gun:
     def targetting(self, event):
         """Прицеливание. Зависит от положения мыши."""
         if event:
-            self.an = -math.atan((event.pos[1]-450) / (event.pos[0]-20))
+            self.an = - math.atan((event.pos[1]-450) / (event.pos[0]-20))
         if self.f2_on:
             self.color = PINK
         else:
-            self.color = BLACK
+            self.color = PINK
 
     def draw_tank(self, screen):
         self.screen.blit(tank_image, (self.x, self.y))
@@ -245,6 +261,8 @@ class Target:
         self.r = 10
         self.vx = 5
         self.vy = 5
+        self.t = 0.1
+        self.y0 = ran.randint(300, 540) 
         self.points = 1
         self.live = 100
         self.color = choice(GAME_COLORS)
@@ -288,12 +306,21 @@ class Target_2 (Target):
         pygame.draw.rect(self.screen, self.color, (self.x, self.y, self.r, self.r))
 
     def move_rect (self):
-        self.x = self.x + self.vx
-        self.y = 100 * math.sin(self.x * 50) + self.y
-        if self.x > 800 - self.r or self.x < self.r:
-            self.vx = - self.vx
-        if self.y > 600 - self.r or self.y < self.r:
+        self.x += self.vx 
+        self.y = 100 * math.cos(self.vy * self.t) + self.y0 
+        self.t = self.t + 0.01
+        if self.x > 800 - self.r or self.x < 5:
+           self.vx = - self.vx
+        if self.y > 600 - self.r or self.y < 5:
             self.vy = - self.vy
+       # self.x = self.x + self.vx
+       # self.y = self.y + self.vy
+       # if self.x > 800 - self.r or self.x < 5:
+            #self.vx = - self.vx * ran.randint(1, 3) / 2
+            #if abs(self.vx > 10):
+                #self.vx = 5
+        #if self.y > 600 - self.r or self.y < 5:
+            #self.vy = - self.vy * ran.randint(1, 3) / 2
 
 
 pygame.init()
@@ -316,8 +343,11 @@ bomba.new_bomba()
 finished = False
 
 f1 = pygame.font.Font(None, 36)
+
 text1 = f1.render('Число очков: ', True,
                   (180, 180, 0))
+
+
 
 while not finished:
     screen.fill(WHITE)
@@ -335,10 +365,10 @@ while not finished:
     target1.move_rect()
     
     for b in balls:
-        b.draw(screen)
+        b.draw(screen, BLACK)
 
     for r in rects:
-        r.draw_ball2(screen)
+        r.draw_rect(screen, BLACK)
 
     screen.blit(text1, (10, 50))
     text2 = f1.render(p, True,
@@ -368,10 +398,31 @@ while not finished:
         if massiv_klavish:
             gun.move_tank(massiv_klavish, screen)
             
-    if bomba.hittest(gun) or bomba.end_life():
+    if bomba.hittest(gun):
+        bomba.new_bomba()
+        k = k - 1
+        
+    if bomba.end_life():
         bomba.new_bomba()
 
+    if k == 0:
+        finished = True
+        screen.fill(BLACK)
+        f2 = pygame.font.Font(None, 40)
+        text3 = f2.render('GAME OVER', True,
+                  (180, 180, 0))
+        screen.blit(text3, (330, 300))
 
+        
+        pygame.display.update()
+        clock = pygame.time.Clock()
+        finished = False
+
+        while not finished:
+            clock.tick(FPS)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    finished = True
 
     for b in balls:
         b.move()
@@ -382,23 +433,9 @@ while not finished:
             target.draw(screen)
             l = l + 1
             p = str (l)
-        if b.hittest(target1) and target1.live:
-            balls = []
-            target1.hit()
-            target1.new_target()
-            target1.draw(screen)
-            l = l + 1
-            p = str (l)
 
     for r in rects:
         r.move()
-        if r.hittest(target) and target.live:
-            rects = []
-            target.hit()
-            target.new_target()
-            target.draw(screen)
-            l = l + 1
-            p = str (l)
         if r.hittest(target1) and target1.live:
             rects = []
             target1.hit()
@@ -410,30 +447,37 @@ while not finished:
     
 
     pygame.display.update()
-
-
     
+
+
     gun.power_up()
 
-print('Поздравляем, ваш счет:', points)
+print('Поздравляем, ваш счет:', l)
 
 pygame.quit()
 
 #создание файла с результатами
-dict_rating={}
+dict_rating = {}
 
 with open ('results.txt','a') as file:
-    file.write(str(name) + ' ' + str(points) + '\n')
+    file.write('\n' + str(name) + ' ' + str(l) )
 
 with open ('results.txt','r') as file:
     for line_row in file:
         if len(line_row) == 0:
             continue
         line = line_row.strip().split()
+        i = []
+        for i in range(len(line)):
+                print(line[i])
+                line[1] = int(line[1])
         dict_rating.update({line[0]: line[1]})
-        dict_rating.items()
+        print (line)
+        '''import operator
+        sorted_tuple = sorted(dict_rating.items(), key=operator.itemgetter(1))'''
+        
         sorted_tuple = sorted(dict_rating.items(), key = lambda x: x[1], reverse = True)
         dict_rating = dict(sorted_tuple)
 
 with open ('results.txt','w') as inf:
-        inf.writelines([key+' '+dict_rating[key]+'\n' for key in dict_rating.keys()])
+        inf.writelines(str(key)+' '+str(dict_rating[key])+'\n' for key in dict_rating.keys())
